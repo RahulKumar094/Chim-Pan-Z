@@ -5,3 +5,9 @@ Assembly-CSharp-Editor.csproj
 Assembly-CSharp.csproj
 obj/
 .vs/
+Unity.TextMeshPro.Editor.csproj
+Unity.TextMeshPro.csproj
+Unity.CollabProxy.Editor.csproj
+Unity.Analytics.DataPrivacy.csproj
+Chim-Pan-Z.Editor.csproj
+Chim-Pan-Z.csproj

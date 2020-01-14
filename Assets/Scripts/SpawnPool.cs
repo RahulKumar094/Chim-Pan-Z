@@ -5,11 +5,17 @@ using UnityEngine;
 public class SpawnPool : MonoBehaviour
 {
 	public GameObject _PfEnemy;
-	public int MaxEnemyCount = 20;
+	public GameObject _PfLaser;
+	public GameObject _PfOrb;
+	public int MaxEnemyCount = 20;	
+	public int MaxLaserCount = 20;	
+	public int MaxOrbsCount = 40;
 
 	public static SpawnPool Instance;
 
-	private List<GameObject> EnemyList;
+	private List<GameObject> mEnemyList;
+	private List<GameObject> mLaserList;
+	private List<GameObject> mOrbsList;
 
 	void Awake()
 	{
@@ -23,25 +29,42 @@ public class SpawnPool : MonoBehaviour
 
 	void Start()
     {
-		EnemyList = new List<GameObject>();
-    }
+		mEnemyList = new List<GameObject>();
+		mLaserList = new List<GameObject>();
+		mOrbsList = new List<GameObject>();
+	}
 
-	public GameObject GetNewEnemy()
+	public GameObject GetEnemyFromPool()
 	{
-		for (int i = 0; i < EnemyList.Count; i++)
+		return GetObjectFromPool(ref mEnemyList, _PfEnemy, MaxEnemyCount);
+	}
+
+	public GameObject GetLaserFromPool()
+	{
+		return GetObjectFromPool(ref mLaserList, _PfLaser, MaxLaserCount);
+	}
+
+	public GameObject GetOrbFromPool()
+	{
+		return GetObjectFromPool(ref mOrbsList, _PfOrb, MaxOrbsCount);
+	}
+
+	private GameObject GetObjectFromPool(ref List<GameObject> objs, GameObject prefab, int maxCount)
+	{
+		for (int i = 0; i < objs.Count; i++)
 		{
-			if (!EnemyList[i].activeSelf)
+			if (!objs[i].activeSelf)
 			{
-				EnemyList[i].SetActive(true);
-				return EnemyList[i];
+				objs[i].SetActive(true);
+				return objs[i];
 			}
 		}
 
-		if (EnemyList.Count < MaxEnemyCount)
+		if (objs.Count < maxCount)
 		{
-			GameObject enemy = Instantiate(_PfEnemy, transform);
-			EnemyList.Add(enemy);
-			return enemy;
+			GameObject obj = Instantiate(prefab, transform);
+			objs.Add(obj);
+			return obj;
 		}
 
 		return null;

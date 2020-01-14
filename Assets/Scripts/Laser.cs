@@ -2,21 +2,13 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Laser : MonoBehaviour
+public class Laser : PoolObject
 {
-	// Start is called before the first frame update
 	public float MoveSpeed = 8;
-    void Start()
-    {
-        
-    }
 
-    // Update is called once per frame
-    void Update()
+    protected override void Update()
     {
-		if (transform.position.z - PlayerController.Instance.transform.position.z < -10f)
-			gameObject.SetActive(false);
-
+		base.Update();
 		transform.position += new Vector3(0, 0, -MoveSpeed * Time.deltaTime);
 	}
 
@@ -24,8 +16,9 @@ public class Laser : MonoBehaviour
 	{
 		if (collision.transform.tag == "Player")
 		{
-			Destroy(this.gameObject);
+			DisablePoolObject();
 			ParticleManager.Instance.CreateParticle(ParticleType.SmallSmoke, collision.contacts[0].point);
 		}
 	}
+
 }

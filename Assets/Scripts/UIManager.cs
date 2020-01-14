@@ -4,6 +4,7 @@ using UnityEngine;
 public class UIManager : MonoBehaviour
 {
 	public TextMeshProUGUI Txt_FeedBack;
+	public TextMeshProUGUI Txt_ComboCounter;
 	public static UIManager Instance;
 
 	void Awake()
@@ -26,5 +27,13 @@ public class UIManager : MonoBehaviour
 	private void DisableText()
 	{
 		Txt_FeedBack.gameObject.SetActive(false);
+	}
+
+	public void ShowComboCount(int count)
+	{
+		Txt_ComboCounter.text = "";
+
+		if (count != 0)
+			Txt_ComboCounter.text = "x" + count.ToString();
 	}
 }

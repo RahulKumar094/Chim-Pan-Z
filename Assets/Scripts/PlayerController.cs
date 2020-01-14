@@ -9,14 +9,22 @@ public class PlayerController : MonoBehaviour
 	public BoxCollider TargetDetector;
 	public static PlayerController Instance;
 
-	private Animator mAnimator;
-	private GameObject mTarget;
-	private Transform mWallInFront;
-	private float mMoveToX;
-	private bool mIsTargetInRange;
+	public delegate void OnTakeDamageEvent(int currentHealth, PoolObject collidingObject);
+	public static OnTakeDamageEvent OnTakeDamage;
 
+	public Vector3 HipPosition
+	{
+		get { return mHipTransform.position; }
+	}
+	private Animator mAnimator;
+	private GameObject mTargetInProximity;
+	private GameObject mLaserInProximity;
+	private Transform mWallInFront;	
+	private Transform mHipTransform;
+	private float mMoveToX;
 	private int mHealth;
 	private float mMoveSpeed;
+	private Vector3 mInitPlayerPosition;
 
 	void Awake()
     {
@@ -37,8 +45,9 @@ public class PlayerController : MonoBehaviour
 		InputHandler.OnSwipeRightEvent += OnSwipeRight;
 		InputHandler.OnHoldEvent += OnHold;
 
+		mHipTransform = transform.GetChild(0);
 		mAnimator = GetComponent<Animator>();
-		ResetPlayer();
+		mInitPlayerPosition = transform.position;
 	}
 	
 	void Update()
@@ -48,25 +57,23 @@ public class PlayerController : MonoBehaviour
 
 	private void OnTap()
 	{
-		if (mIsTargetInRange && mTarget != null)
+		if (mTargetInProximity != null)
 		{
-			float dist = Vector3.Distance(mTarget.transform.position, transform.position);
+			float dist = Mathf.Abs(mTargetInProximity.transform.position.z - transform.position.z);
 			if (dist < TargetDetector.size.z / 3)
 			{
-				UIManager.Instance.ShowFeedback("Late");
+				GameManager.Instance.HitType("Late");
 			}
 			else if (dist >= TargetDetector.size.z / 3 && dist < 2 * TargetDetector.size.z / 3)
 			{
-				UIManager.Instance.ShowFeedback("Perfect");
+				GameManager.Instance.HitType("Perfect");
 			}
 			else
-				UIManager.Instance.ShowFeedback("Early");
-
+				GameManager.Instance.HitType("Early");
 
 			mAnimator.SetTrigger("MeleeAttack");
-			mTarget.GetComponent<Enemy>().Kill();
-			mIsTargetInRange = false;
-			mTarget = null;
+			mTargetInProximity.GetComponent<Enemy>().Kill();
+			mTargetInProximity = null;
 		}
 	}
 
@@ -83,8 +90,9 @@ public class PlayerController : MonoBehaviour
 		if (transform.position.x > GameSettings.MoveLeftLimit)
 		{
 			mMoveToX = transform.position.x - GameSettings.SideMoveDistance;
+			CheckForNearByMiss();
 			StartCoroutine("MoveTo");
-		}			
+		}
 	}
 
 	private void OnSwipeRight()
@@ -92,8 +100,18 @@ public class PlayerController : MonoBehaviour
 		if (transform.position.x < GameSettings.MoveRightLimit)
 		{
 			mMoveToX = transform.position.x + GameSettings.SideMoveDistance;
+			CheckForNearByMiss();
 			StartCoroutine("MoveTo");
 		}			
+	}
+
+	private void CheckForNearByMiss()
+	{
+		if (mLaserInProximity != null)
+		{
+			if (Mathf.Abs(mLaserInProximity.transform.position.z - transform.position.z) < TargetDetector.size.z)
+				UIManager.Instance.ShowFeedback("Near By Miss");
+		}
 	}
 
 	private void OnHold(float holdTime)
@@ -103,43 +121,48 @@ public class PlayerController : MonoBehaviour
 
 	private void OnTriggerEnter(Collider other)
 	{
-		if (other.tag == "Target")
+		System.Type type = other.GetType();
+
+		if (type == typeof(CapsuleCollider) && (other.CompareTag("Target") || other.CompareTag("Laser")))
 		{
-			mIsTargetInRange = true;
-			mTarget = other.gameObject;
+			if(--mHealth >= 0)
+				OnTakeDamage?.Invoke(mHealth, other.GetComponent<PoolObject>());
+		}
+		else if (type == typeof(BoxCollider))
+		{
+			if (other.CompareTag("Target"))
+			{
+				mTargetInProximity = other.gameObject;
+			}
+			else if (other.CompareTag("Laser"))
+			{
+				mLaserInProximity = other.gameObject;
+			}
 		}
 	}
 
 	private void OnTriggerExit(Collider other)
 	{
-		if (other.tag == "Target")
-		{
-			mIsTargetInRange = false;
-			mTarget = null;
-		}		
-	}
+		System.Type type = other.GetType();
 
-	private void OnCollisionEnter(Collision collision)
-	{
-		if (collision.transform.tag == "Target" || collision.transform.tag == "Laser")
+		if (type == typeof(BoxCollider))
 		{
-			mHealth--;
-
-			if (mHealth == 0)
+			if (other.tag == "Target")
 			{
-				mAnimator.SetTrigger("Dying");
-				mMoveSpeed = 0;
+				mTargetInProximity = null;
 			}
-
-			Debug.LogError("Health: " + mHealth);
+			else if (other.CompareTag("Laser"))
+			{
+				mLaserInProximity = null;
+			}
 		}
 	}
-
+	
 	private IEnumerator MoveTo()
 	{
 		while (transform.position.x != mMoveToX)
 		{
-			transform.position = Vector3.Lerp(transform.position, new Vector3(mMoveToX, transform.position.y, transform.position.z), 0.18f);
+			transform.position = Vector3.Slerp(transform.position, new Vector3(mMoveToX, transform.position.y, transform.position.z), 0.18f);
 
 			if (Mathf.Abs(transform.position.x - mMoveToX) < 0.2f)
 			{
@@ -150,11 +173,28 @@ public class PlayerController : MonoBehaviour
 		}
 	}
 
-	private void ResetPlayer()
+	public void ResetPlayer()
 	{
-		transform.position = new Vector3(0, transform.position.y, 5f);
+		transform.position = mInitPlayerPosition;
 		mMoveSpeed = MoveSpeed;
 		mHealth = Health;
+	}
+
+	public void KilledByEnemy()
+	{
+		mMoveSpeed = 0;
+		mAnimator.SetTrigger("Dying");
+	}
+
+	public void KilledByLaser()
+	{
+		mMoveSpeed = 0;
+		mAnimator.SetTrigger("Dying");
+	}
+
+	public void HitByLaser()
+	{
+		mAnimator.SetTrigger("Hit");
 	}
 
 }

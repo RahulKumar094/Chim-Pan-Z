@@ -5,6 +5,6 @@ using UnityEngine;
 public class GameSettings
 {
 	public const float SideMoveDistance = 1f;
-	public const float MoveLeftLimit = -2f;
-	public const float MoveRightLimit = 2f;
+	public static float MoveLeftLimit = -2f;
+	public static float MoveRightLimit = 2f;
 }
