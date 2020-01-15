@@ -2,16 +2,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum ParticleType
-{
-	SmallSmoke,
-	BotBlast,
-	ElectricSparks
-}
-
 public class ParticleManager : MonoBehaviour
 {
 	public static ParticleManager Instance;
+	public ParticleSystem _HitParticles;
 	public Material _GreenOrb;
 	public Material _RedOrb;
 	public float MoveTimeAfterBurst = 3;
@@ -33,9 +27,10 @@ public class ParticleManager : MonoBehaviour
 		mAllOrbs = new List<GameObject>();
 	}
 
-	public void CreateParticle(ParticleType type, Vector3 position)
+	public void CreateHitParticlesAt(Vector3 position)
 	{
-
+		_HitParticles.transform.position = position;
+		_HitParticles.Play();
 	}
 
 	public void CreateRedOrbs(int count, Vector3 position)

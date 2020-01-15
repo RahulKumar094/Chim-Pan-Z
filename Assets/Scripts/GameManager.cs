@@ -59,7 +59,7 @@ public class GameManager : MonoBehaviour
 		}
 	}
 
-	private void OnPlayerTookDamage(int currentHealth, PoolObject collidingObject)
+	private void OnPlayerTookDamage(int currentHealth, PoolObject collidingObject, Vector3 collisionPoint)
 	{
 		ComboCount = 0;
 
@@ -72,14 +72,21 @@ public class GameManager : MonoBehaviour
 			CameraControls.CameraSpeed = 0;
 			Debug.LogError("Killed By Enemy");
 		}
-		else if (collidingObject is Laser && currentHealth <= 0)
+		else if (collidingObject is Laser)
 		{
-			PlayerController.Instance.KilledByLaser();
-			CameraControls.CameraSpeed = 0;
-			Debug.LogError("Killed By Laser");
+			if (currentHealth <= 0)
+			{
+				PlayerController.Instance.KilledByLaser();
+				CameraControls.CameraSpeed = 0;
+				Debug.LogError("Killed By Laser");
+			}
+			else
+			{
+				Laser laser = (Laser)collidingObject;
+				laser.CollidedAtPoint(collisionPoint);
+			}
 		}
-		else
-			PlayerController.Instance.HitByLaser();
+			
 	}
 
 	public void HitType(string type)

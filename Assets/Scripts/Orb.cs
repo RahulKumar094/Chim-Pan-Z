@@ -5,40 +5,32 @@ using UnityEngine;
 public class Orb : PoolObject
 {
 	public int Value = 5;
-	private bool mPullBack;
-	private Rigidbody Rigidbody;
-
-	private void Awake()
-	{
-		Rigidbody = GetComponent<Rigidbody>();
-	}
 
 	private void OnEnable()
 	{
-		mPullBack = false;
 		Invoke("PullBack", 0.5f);
-	}
-
-	protected override void Update()
-	{
-		base.Update();
-
-		if (mPullBack)
-		{
-			transform.position = Vector3.MoveTowards(transform.position, PlayerController.Instance.HipPosition, 0.5f);
-		}
-    }
-
-	private void OnCollisionEnter(Collision collision)
-	{
-		if (collision.gameObject.CompareTag("Player"))
-		{
-			DisablePoolObject();
-		}
 	}
 
 	private void PullBack()
 	{
-		mPullBack = true;
+		StartCoroutine("PullBackMech");
+	}
+
+	private IEnumerator PullBackMech()
+	{
+		float dist = Vector3.Distance(transform.position, PlayerController.Instance.HipPosition);
+		while (dist > 0.5f)
+		{
+			transform.position = Vector3.MoveTowards(transform.position, PlayerController.Instance.HipPosition, 0.5f);
+			dist = Vector3.Distance(transform.position, PlayerController.Instance.HipPosition);
+
+			if (dist < 0.5f)
+			{
+				StopCoroutine("PullBackMech");
+				DisablePoolObject();
+			}
+
+			yield return new WaitForEndOfFrame();
+		}
 	}
 }

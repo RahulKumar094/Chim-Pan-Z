@@ -12,13 +12,10 @@ public class Laser : PoolObject
 		transform.position += new Vector3(0, 0, -MoveSpeed * Time.deltaTime);
 	}
 
-	private void OnCollisionEnter(Collision collision)
+	public void CollidedAtPoint(Vector3 point)
 	{
-		if (collision.transform.tag == "Player")
-		{
-			DisablePoolObject();
-			ParticleManager.Instance.CreateParticle(ParticleType.SmallSmoke, collision.contacts[0].point);
-		}
+		DisablePoolObject();
+		ParticleManager.Instance.CreateHitParticlesAt(point);
 	}
 
 }
